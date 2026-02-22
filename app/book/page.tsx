@@ -1,37 +1,39 @@
-"use client";
+import { and, eq } from "drizzle-orm";
+import { BookingForm } from "@/components/booking-form";
+import { db } from "@/lib/db/client";
+import { barbers, services } from "@/lib/db/schema";
 
-import { useState } from "react";
-
-export default function BookingPage() {
-  const [response, setResponse] = useState<string>("");
-
-  async function submit(formData: FormData) {
-    const payload = Object.fromEntries(formData.entries());
-    const res = await fetch("/api/bookings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    setResponse(res.ok ? "Agendamento realizado!" : data.error ?? "Erro");
+export default async function BookingPage() {
+  const shop = await db.query.shops.findFirst();
+  if (!shop) {
+    return (
+      <main className="mx-auto max-w-3xl px-4 py-10">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Agendar horário</h1>
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          Loja não configurada. Cadastre uma loja primeiro.
+        </p>
+      </main>
+    );
   }
 
+  const [barberOptions, serviceOptions] = await Promise.all([
+    db
+      .select({ id: barbers.id, name: barbers.name })
+      .from(barbers)
+      .where(and(eq(barbers.shopId, shop.id), eq(barbers.active, true))),
+    db
+      .select({ id: services.id, name: services.name })
+      .from(services)
+      .where(and(eq(services.shopId, shop.id), eq(services.active, true)))
+  ]);
+
   return (
-    <main className="mx-auto max-w-xl p-8">
-      <h1 className="mb-6 text-3xl font-semibold">Agendar horário</h1>
-      <form action={submit} className="space-y-3 rounded bg-white p-4 shadow">
-        <input className="w-full rounded border p-2" name="barberId" placeholder="Barber UUID" required />
-        <input className="w-full rounded border p-2" name="serviceId" placeholder="Service UUID" required />
-        <input className="w-full rounded border p-2" name="startsAt" type="datetime-local" required />
-        <input className="w-full rounded border p-2" name="name" placeholder="Nome" required />
-        <input className="w-full rounded border p-2" name="phone" placeholder="Telefone" required />
-        <select className="w-full rounded border p-2" name="source">
-          <option value="online">Online</option>
-          <option value="walk_in">Walk-in</option>
-        </select>
-        <button className="w-full rounded bg-primary p-2 text-white" type="submit">Confirmar</button>
-      </form>
-      <p className="mt-3 text-sm">{response}</p>
+    <main className="mx-auto max-w-3xl px-4 py-10">
+      <div className="mb-8">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Agendar horário</h1>
+        <p className="mt-2 text-slate-600">Escolha barbeiro, serviço e horário em poucos segundos.</p>
+      </div>
+      <BookingForm barbers={barberOptions} services={serviceOptions} />
     </main>
   );
 }

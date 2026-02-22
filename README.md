@@ -82,17 +82,35 @@ Behaviors:
 ## Environment variables
 Copy `.env.example` to `.env.local`.
 
+## Production environment variables
+Use real values in Vercel Project Settings:
+
+- `DATABASE_URL`: Neon Postgres connection string (prefer pooled endpoint).
+- `NEXTAUTH_SECRET`: long random secret (`openssl rand -base64 32`).
+- `NEXTAUTH_URL`: your public app URL (e.g. `https://barber.example.com`).
+- `ADMIN_EMAIL`: initial admin email used for bootstrap.
+- `ADMIN_PASSWORD`: initial admin password used for bootstrap/seed only (rotate after first setup).
+- `VAPID_PUBLIC_KEY`: Web Push public key generated from VAPID pair.
+- `VAPID_PRIVATE_KEY`: Web Push private key (keep secret).
+- `VAPID_SUBJECT`: contact mailto URL, e.g. `mailto:ops@barber.example.com`.
+- `SMS_PROVIDER`: `mock` for non-prod/testing or `noop` to disable SMS sends.
+
+### Generate VAPID keys
+```bash
+pnpm dlx web-push generate-vapid-keys
+```
+
 ## Run locally
 ```bash
-npm install
-npm run db:generate
-npm run dev
+pnpm install
+pnpm db:generate
+pnpm dev
 ```
 
 ## Deploy to Vercel
 1. Add all env vars in Vercel dashboard.
 2. Provision Neon DB and set `DATABASE_URL`.
-3. Run migrations in CI/CD (or `npm run db:migrate`).
+3. Run migrations in CI/CD (or `pnpm db:migrate`).
 4. Set `NEXTAUTH_URL` to production URL.
 
 ## Credentials bootstrapping
