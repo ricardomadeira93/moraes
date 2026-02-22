@@ -225,3 +225,27 @@ Isolation strategy:
 - Admin pages and server actions resolve `shopId` from the authenticated session and scope every query/update by that `shopId`.
 - Public endpoints do not call admin helpers and cannot read admin data.
 - Cross-tenant writes are blocked at DB level by composite foreign keys and unique tenant constraints in schema.
+
+
+## SMS abstraction layer
+Implemented in `lib/sms/provider.ts` using an interface-first design.
+
+### Interface
+- `SmsProvider` with:
+  - `name`
+  - `send(message: SmsMessage)`
+
+### Mock implementation
+- `MockSmsProvider` logs outgoing SMS and returns accepted result.
+- `NoopSmsProvider` supports disabling SMS safely in some environments.
+
+### Provider selection
+- `createSmsProvider()` reads `SMS_PROVIDER` (`mock` by default).
+- This allows swapping to a real provider later without changing business logic call sites.
+
+### Usage examples
+- `sendBookingConfirmationSMS(phone)`
+- `sendReminderSMS(phone)`
+- `sendCancellationSMS(phone)`
+
+Example (already wired): booking API calls `sendBookingConfirmationSMS(phone)` after successful transaction.

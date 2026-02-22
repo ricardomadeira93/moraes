@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db, DEFAULT_SHOP_ID } from "@/lib/db/client";
 import { appointments, customers, services } from "@/lib/db/schema";
 import { notifyShop } from "@/lib/push/webpush";
-import { smsProvider } from "@/lib/sms/provider";
+import { sendBookingConfirmationSMS } from "@/lib/sms/provider";
 
 const bookingSchema = z.object({
   barberId: z.string().uuid(),
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
     });
 
     await notifyShop(DEFAULT_SHOP_ID, { title: "Novo agendamento", body: `${name} às ${start.toISOString()}` });
-    await smsProvider.sendSMS({ to: phone, type: "booking_confirmation", message: "Seu horário foi confirmado." });
+    await sendBookingConfirmationSMS(phone);
 
     return NextResponse.json(appointment, { status: 201 });
   } catch (error) {
