@@ -84,15 +84,15 @@ Copy `.env.example` to `.env.local`.
 
 ## Run locally
 ```bash
-pnpm install
-pnpm db:generate
-pnpm dev
+npm install
+npm run db:generate
+npm run dev
 ```
 
 ## Deploy to Vercel
 1. Add all env vars in Vercel dashboard.
 2. Provision Neon DB and set `DATABASE_URL`.
-3. Run migrations in CI/CD (or `pnpm db:migrate`).
+3. Run migrations in CI/CD (or `npm run db:migrate`).
 4. Set `NEXTAUTH_URL` to production URL.
 
 ## Credentials bootstrapping
