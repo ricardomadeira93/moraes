@@ -249,3 +249,30 @@ Implemented in `lib/sms/provider.ts` using an interface-first design.
 - `sendCancellationSMS(phone)`
 
 Example (already wired): booking API calls `sendBookingConfirmationSMS(phone)` after successful transaction.
+
+
+## Appointment metrics aggregation
+Implemented with read-only aggregation in `lib/metrics/appointments.ts` and exposed at `GET /api/admin/metrics`.
+
+Aggregates:
+- online vs walk-in (`source`)
+- no-shows (`status = no_show`)
+- cancellations (`status = canceled`)
+
+Performance and booking isolation:
+- Query is read-only and filtered by `shop_id` (+ optional time range), leveraging existing appointments indexes (`appointments_shop_start_idx`, etc.).
+- No write locks are acquired; booking transaction path remains unchanged.
+
+Example output:
+```json
+{
+  "shopId": "5a1c...",
+  "range": { "startAt": null, "endAt": null },
+  "metrics": {
+    "online": 42,
+    "walkIn": 18,
+    "noShows": 4,
+    "cancellations": 7
+  }
+}
+```
