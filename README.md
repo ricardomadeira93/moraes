@@ -104,8 +104,11 @@ pnpm dlx web-push generate-vapid-keys
 ```bash
 pnpm install
 pnpm db:generate
+pnpm db:migrate
 pnpm dev
 ```
+
+If you see `relation "shops" does not exist`, your database schema was not migrated yet. Run `pnpm db:migrate`.
 
 ## Deploy to Vercel
 1. Add all env vars in Vercel dashboard.
