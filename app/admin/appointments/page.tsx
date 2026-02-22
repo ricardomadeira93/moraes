@@ -1,12 +1,14 @@
-import { db, DEFAULT_SHOP_ID } from "@/lib/db/client";
+import { db } from "@/lib/db/client";
 import { appointments } from "@/lib/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { updateAppointmentStatus } from "@/lib/actions/admin";
+import { requireAdminAccessPage } from "@/lib/auth/access";
 
 const statuses = ["scheduled", "walk_in", "canceled", "no_show", "completed"];
 
 export default async function AppointmentsPage() {
-  const data = await db.select().from(appointments).where(eq(appointments.shopId, DEFAULT_SHOP_ID)).orderBy(desc(appointments.startsAt));
+  const { shopId } = await requireAdminAccessPage();
+  const data = await db.select().from(appointments).where(eq(appointments.shopId, shopId)).orderBy(desc(appointments.startsAt));
   return (
     <div className="space-y-3">
       <h1 className="text-2xl font-semibold">Agendamentos</h1>

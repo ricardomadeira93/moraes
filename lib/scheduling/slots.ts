@@ -2,8 +2,8 @@ import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { appointments, availabilityRules, timeBlocks } from "@/lib/db/schema";
 
-const DEFAULT_SLOT_MINUTES = 30;
-const SAO_PAULO_OFFSET = "-03:00";
+export const DEFAULT_SLOT_MINUTES = 30;
+export const SAO_PAULO_OFFSET = "-03:00";
 
 export type DateRangeInput = {
   startDate: string; // YYYY-MM-DD (shop timezone)
@@ -18,17 +18,17 @@ export type AvailabilityInput = {
   slotMinutes?: number;
 };
 
-type MinuteRange = { startMinute: number; endMinute: number };
+export type MinuteRange = { startMinute: number; endMinute: number };
 type Interval = { startsAt: Date; endsAt: Date };
 
-type AvailabilityData = {
+export type AvailabilityData = {
   shopRulesByWeekday: Map<number, MinuteRange[]>;
   barberRulesByWeekday: Map<number, MinuteRange[]>;
   blockedIntervals: Interval[];
   bookedIntervals: Interval[];
 };
 
-function dateAtMinute(dateISO: string, minuteOfDay: number): Date {
+export function dateAtMinute(dateISO: string, minuteOfDay: number): Date {
   const hh = Math.floor(minuteOfDay / 60)
     .toString()
     .padStart(2, "0");
@@ -36,7 +36,7 @@ function dateAtMinute(dateISO: string, minuteOfDay: number): Date {
   return new Date(`${dateISO}T${hh}:${mm}:00${SAO_PAULO_OFFSET}`);
 }
 
-function eachDateISOInRange({ startDate, endDate }: DateRangeInput): string[] {
+export function eachDateISOInRange({ startDate, endDate }: DateRangeInput): string[] {
   const out: string[] = [];
   let cursor = new Date(`${startDate}T00:00:00${SAO_PAULO_OFFSET}`);
   const end = new Date(`${endDate}T00:00:00${SAO_PAULO_OFFSET}`);
@@ -47,7 +47,7 @@ function eachDateISOInRange({ startDate, endDate }: DateRangeInput): string[] {
   return out;
 }
 
-function byWeekdayRanges(rules: { weekday: number; startMinute: number; endMinute: number }[]) {
+export function byWeekdayRanges(rules: { weekday: number; startMinute: number; endMinute: number }[]) {
   const map = new Map<number, MinuteRange[]>();
   for (const r of rules) {
     const list = map.get(r.weekday) ?? [];
@@ -61,7 +61,7 @@ function byWeekdayRanges(rules: { weekday: number; startMinute: number; endMinut
   return map;
 }
 
-function intersectRanges(base: MinuteRange[], overlay: MinuteRange[]): MinuteRange[] {
+export function intersectRanges(base: MinuteRange[], overlay: MinuteRange[]): MinuteRange[] {
   const output: MinuteRange[] = [];
   for (const a of base) {
     for (const b of overlay) {
@@ -113,7 +113,7 @@ export function calculateAvailableStartTimes(input: AvailabilityInput, data: Ava
   return available;
 }
 
-export async function computeAvailableSlots(input: AvailabilityInput) {
+export async function getAvailabilityData(input: AvailabilityInput): Promise<AvailabilityData> {
   const days = eachDateISOInRange(input.range);
   const rangeStart = new Date(`${days[0]}T00:00:00${SAO_PAULO_OFFSET}`);
   const rangeEnd = new Date(`${days[days.length - 1]}T23:59:59${SAO_PAULO_OFFSET}`);
@@ -152,12 +152,17 @@ export async function computeAvailableSlots(input: AvailabilityInput) {
       )
   ]);
 
-  const slots = calculateAvailableStartTimes(input, {
+  return {
     shopRulesByWeekday: byWeekdayRanges(shopRules),
     barberRulesByWeekday: byWeekdayRanges(barberRules),
     blockedIntervals: blocked,
     bookedIntervals: booked
-  });
+  };
+}
+
+export async function computeAvailableSlots(input: AvailabilityInput) {
+  const data = await getAvailabilityData(input);
+  const slots = calculateAvailableStartTimes(input, data);
 
   return {
     timezone: "America/Sao_Paulo",

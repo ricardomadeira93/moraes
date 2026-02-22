@@ -1,10 +1,12 @@
-import { db, DEFAULT_SHOP_ID } from "@/lib/db/client";
+import { db } from "@/lib/db/client";
 import { barbers } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { saveBarber } from "@/lib/actions/admin";
+import { requireAdminAccessPage } from "@/lib/auth/access";
 
 export default async function BarbersPage() {
-  const data = await db.select().from(barbers).where(eq(barbers.shopId, DEFAULT_SHOP_ID));
+  const { shopId } = await requireAdminAccessPage();
+  const data = await db.select().from(barbers).where(eq(barbers.shopId, shopId));
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Barbeiros</h1>

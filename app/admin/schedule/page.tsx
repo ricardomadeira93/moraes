@@ -1,12 +1,14 @@
-import { db, DEFAULT_SHOP_ID } from "@/lib/db/client";
+import { db } from "@/lib/db/client";
 import { barbers, timeBlocks } from "@/lib/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { createTimeBlock } from "@/lib/actions/admin";
+import { requireAdminAccessPage } from "@/lib/auth/access";
 
 export default async function SchedulePage() {
+  const { shopId } = await requireAdminAccessPage();
   const [b, blocks] = await Promise.all([
-    db.select().from(barbers).where(eq(barbers.shopId, DEFAULT_SHOP_ID)),
-    db.select().from(timeBlocks).where(eq(timeBlocks.shopId, DEFAULT_SHOP_ID)).orderBy(desc(timeBlocks.startsAt))
+    db.select().from(barbers).where(eq(barbers.shopId, shopId)),
+    db.select().from(timeBlocks).where(eq(timeBlocks.shopId, shopId)).orderBy(desc(timeBlocks.startsAt))
   ]);
 
   return (
