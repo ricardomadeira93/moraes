@@ -6,6 +6,6 @@ export async function POST() {
   const authz = await requireAdminAccessApi();
   if (!authz.ok) return NextResponse.json({ error: authz.error }, { status: authz.status });
 
-  await notifyShop(authz.access.shopId, { title: "Teste", body: "Notificação manual" });
+  await notifyShop(authz.access.shopId, { eventKey: `manual:${Date.now()}`, title: "Teste", body: "Notificação manual" });
   return NextResponse.json({ ok: true });
 }

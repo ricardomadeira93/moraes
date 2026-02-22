@@ -240,3 +240,18 @@ export const shopRelations = relations(shops, ({ many }) => ({
   services: many(services),
   appointments: many(appointments)
 }));
+
+export const pushNotificationEvents = pgTable(
+  "push_notification_events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    shopId: uuid("shop_id").notNull().references(() => shops.id, { onDelete: "cascade" }),
+    subscriptionId: uuid("subscription_id").notNull().references(() => pushSubscriptions.id, { onDelete: "cascade" }),
+    eventKey: varchar("event_key", { length: 200 }).notNull(),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (t) => ({
+    eventUnique: uniqueIndex("push_events_shop_sub_event_uq").on(t.shopId, t.subscriptionId, t.eventKey),
+    byShopDeliveredAt: index("push_events_shop_delivered_idx").on(t.shopId, t.deliveredAt)
+  })
+);
