@@ -9,6 +9,22 @@ import { Select } from "@/components/ui/select";
 
 type Option = { id: string; name: string };
 
+type ErrorPayload = {
+  error?: string | { formErrors?: string[]; fieldErrors?: Record<string, string[]> };
+};
+
+function getErrorMessage(payload: ErrorPayload): string {
+  if (typeof payload.error === "string") return payload.error;
+  if (!payload.error) return "Erro ao agendar";
+
+  const firstFormError = payload.error.formErrors?.[0];
+  if (firstFormError) return firstFormError;
+
+  const fieldError = Object.values(payload.error.fieldErrors ?? {}).find((arr) => arr?.length)?.[0];
+  return fieldError ?? "Erro ao agendar";
+}
+
+
 export function BookingForm({ barbers, services }: { barbers: Option[]; services: Option[] }) {
   const [response, setResponse] = useState<string>("");
 
@@ -19,8 +35,8 @@ export function BookingForm({ barbers, services }: { barbers: Option[]; services
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    setResponse(res.ok ? "Agendamento realizado com sucesso!" : data.error ?? "Erro ao agendar");
+    const data: ErrorPayload = await res.json();
+    setResponse(res.ok ? "Agendamento realizado com sucesso!" : getErrorMessage(data));
   }
 
   return (

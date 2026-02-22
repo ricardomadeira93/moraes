@@ -7,15 +7,30 @@ import { notifyShop } from "@/lib/push/webpush";
 import { sendBookingConfirmationSMS } from "@/lib/sms/provider";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import { normalizePhone } from "@/lib/utils/phone";
+import { SAO_PAULO_OFFSET } from "@/lib/scheduling/pure";
 
 const bookingSchema = z.object({
   barberId: z.string().uuid(),
   serviceId: z.string().uuid(),
-  startsAt: z.string().datetime(),
+  startsAt: z.string().min(1),
   name: z.string().min(2),
   phone: z.string().min(8),
   source: z.enum(["online", "walk_in"]).default("online")
 });
+
+function parseBookingStart(value: string): Date | null {
+  const iso = z.string().datetime().safeParse(value);
+  if (iso.success) {
+    const dt = new Date(value);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  }
+
+  const localPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+  if (!localPattern.test(value)) return null;
+
+  const dt = new Date(`${value}:00${SAO_PAULO_OFFSET}`);
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
 
 function isDoubleBookingError(error: unknown) {
   const code = (error as { code?: string })?.code;
@@ -41,6 +56,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid phone number" }, { status: 400 });
   }
 
+  const start = parseBookingStart(startsAt);
+  if (!start) {
+    return NextResponse.json(
+      { error: "Invalid datetime. Use ISO string or datetime-local format." },
+      { status: 400 }
+    );
+  }
+
   const service = await db.query.services.findFirst({ where: eq(services.id, serviceId) });
   if (!service) return NextResponse.json({ error: "service not found" }, { status: 404 });
 
@@ -51,7 +74,6 @@ export async function POST(req: NextRequest) {
   });
   if (!barber) return NextResponse.json({ error: "barber not found" }, { status: 404 });
 
-  const start = new Date(startsAt);
   const end = new Date(start.getTime() + service.durationSlots * 30 * 60_000);
 
   try {
