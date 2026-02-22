@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  background-image: radial-gradient(circle at top, #e2e8f0 0%, transparent 35%);
+}
