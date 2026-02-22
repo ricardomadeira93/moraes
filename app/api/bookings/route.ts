@@ -111,7 +111,9 @@ export async function POST(req: NextRequest) {
       title: "Novo agendamento",
       body: `${name} às ${start.toISOString()}`
     });
-    await sendBookingConfirmationSMS(phone);
+    await sendBookingConfirmationSMS(phone).catch((error) => {
+      console.error("sms_booking_confirmation_failed", { appointmentId: appointment.id, message: (error as Error).message });
+    });
 
     return NextResponse.json(appointment, { status: 201 });
   } catch (error) {
